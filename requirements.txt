@@ -1,0 +1,7 @@
+opencv-python
+mysql-connector-python
+numpy
+ultralytics
+shapely
+openai
+python-dotenv
