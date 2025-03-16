@@ -9,7 +9,7 @@ from shapely.geometry import LineString
 from ultralytics.solutions.solutions import BaseSolution
 from ultralytics.utils.plotting import Annotator, colors
 from openai import OpenAI
-
+import database
 # Import database functions
 from database import initialize_database, insert_into_database, get_license_plate
 
@@ -82,9 +82,7 @@ class SpeedEstimator(BaseSolution):
         """Estimate speed of detected vehicles in the video."""
         self.annotator = Annotator(im0, line_width=self.line_width)
         self.extract_tracks(im0)
-        self.annotator.draw_region(
-            reg_pts=self.region, color=(104, 0, 123), thickness=self.line_width * 2
-        )
+        # self.annotator.draw_region(reg_pts=self.region, color=(104, 0, 123), thickness=self.line_width * 2)
 
         current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -92,7 +90,7 @@ class SpeedEstimator(BaseSolution):
             self.store_tracking_history(track_id, box)
 
             if track_id not in self.trk_pt:
-                self.trk_pt[track_id] = time()
+                self.trk_pt[track_id] = time.time()
             if track_id not in self.trk_pp:
                 self.trk_pp[track_id] = box  
 
@@ -106,12 +104,12 @@ class SpeedEstimator(BaseSolution):
 
             if direction == "known" and track_id not in self.trkd_ids:
                 self.trkd_ids.append(track_id)
-                time_difference = time() - self.trk_pt[track_id]
+                time_difference = time.time() - self.trk_pt[track_id]
                 if time_difference > 0:
                     speed = np.linalg.norm(np.array(curr_pos[:2]) - np.array(prev_pos[:2])) / time_difference
                     self.spd[track_id] = round(speed)
 
-            self.trk_pt[track_id] = time()
+            self.trk_pt[track_id] = time.time()
             self.trk_pp[track_id] = curr_pos
 
             speed_value = self.spd.get(track_id, 0)
@@ -173,7 +171,7 @@ class SpeedEstimator(BaseSolution):
         return im0
 
 # Main execution block with video saving
-cap = cv2.VideoCapture('tc.mp4')
+cap = cv2.VideoCapture('video.mp4')
 region_points = [(0, 119), (1018, 119)]
 
 speed_obj = SpeedEstimator(region=region_points, model="yolo12s.pt", line_width=2)
